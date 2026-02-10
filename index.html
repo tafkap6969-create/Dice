@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎲 Dice Mini App</title>
+  <title>🎲 Craps Mini App</title>
 
-  <!-- Telegram Mini App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -17,7 +16,7 @@
     body {
       margin: 0;
       height: 100vh;
-      background: linear-gradient(135deg, #141e30, #243b55);
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -25,8 +24,8 @@
     }
 
     .card {
-      width: 320px;
-      padding: 28px 24px;
+      width: 340px;
+      padding: 26px 22px;
       border-radius: 24px;
       background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(12px);
@@ -35,8 +34,20 @@
     }
 
     h1 {
-      margin: 0 0 16px;
+      margin: 0 0 10px;
       font-size: 26px;
+    }
+
+    .status {
+      margin-top: 6px;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    .point {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
     }
 
     .dice-container {
@@ -84,37 +95,48 @@
       color: #1a1a1a;
     }
 
-    .sum {
+    .result {
       margin-top: 14px;
       font-size: 18px;
-      opacity: 0.9;
+      font-weight: bold;
     }
+
+    .win { color: #7CFC98; }
+    .lose { color: #ff7a7a; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h1>🎲 Бросок костей</h1>
+    <h1>🎲 CRAPS</h1>
+    <div id="phase" class="status">COME OUT ROLL</div>
+    <div id="point" class="point"></div>
 
     <div class="dice-container">
       <div id="d1" class="dice">?</div>
       <div id="d2" class="dice">?</div>
     </div>
 
-    <button onclick="roll()">Бросить</button>
-    <div id="sum" class="sum"></div>
+    <button id="rollBtn" onclick="roll()">Бросить</button>
+    <div id="result" class="result"></div>
   </div>
 
   <script>
-    // Telegram Mini App init
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
+    let phase = 'comeout'; // comeout | point | end
+    let point = null;
+
     function roll() {
+      if (phase === 'end') return;
+
       const d1 = document.getElementById('d1');
       const d2 = document.getElementById('d2');
-      const sum = document.getElementById('sum');
+      const resultEl = document.getElementById('result');
+      const phaseEl = document.getElementById('phase');
+      const pointEl = document.getElementById('point');
 
       d1.classList.add('roll');
       d2.classList.add('roll');
@@ -122,10 +144,10 @@
       setTimeout(() => {
         const v1 = Math.floor(Math.random() * 6) + 1;
         const v2 = Math.floor(Math.random() * 6) + 1;
+        const sum = v1 + v2;
 
         d1.textContent = v1;
         d2.textContent = v2;
-        sum.textContent = `Сумма: ${v1 + v2}`;
 
         d1.classList.remove('roll');
         d2.classList.remove('roll');
@@ -133,7 +155,53 @@
         if (tg.HapticFeedback) {
           tg.HapticFeedback.impactOccurred('medium');
         }
+
+        if (phase === 'comeout') {
+          if (sum === 7 || sum === 11) {
+            endGame('WIN 🎉', 'win');
+          } else if ([2, 3, 12].includes(sum)) {
+            endGame('LOSE 💀', 'lose');
+          } else {
+            point = sum;
+            phase = 'point';
+            phaseEl.textContent = 'POINT PHASE';
+            pointEl.textContent = 'POINT: ' + point;
+            resultEl.textContent = 'Бросай дальше';
+          }
+        } else if (phase === 'point') {
+          if (sum === point) {
+            endGame('WIN 🎉', 'win');
+          } else if (sum === 7) {
+            endGame('LOSE 💀', 'lose');
+          } else {
+            resultEl.textContent = 'Ничего не произошло';
+          }
+        }
       }, 300);
+    }
+
+    function endGame(text, cls) {
+      const resultEl = document.getElementById('result');
+      const rollBtn = document.getElementById('rollBtn');
+      resultEl.textContent = text;
+      resultEl.className = 'result ' + cls;
+      rollBtn.textContent = 'Новая игра';
+      rollBtn.onclick = reset;
+      phase = 'end';
+    }
+
+    function reset() {
+      phase = 'comeout';
+      point = null;
+      document.getElementById('phase').textContent = 'COME OUT ROLL';
+      document.getElementById('point').textContent = '';
+      document.getElementById('result').textContent = '';
+      document.getElementById('result').className = 'result';
+      document.getElementById('d1').textContent = '?';
+      document.getElementById('d2').textContent = '?';
+      const btn = document.getElementById('rollBtn');
+      btn.textContent = 'Бросить';
+      btn.onclick = roll;
     }
   </script>
 
