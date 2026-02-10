@@ -1,10 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>TEST</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Test</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-<body style="background:red;color:white;font-size:30px">
-  WORKS
+<body style="background:#111;color:white;font-size:24px;padding:40px">
+
+  <div id="status">Loading...</div>
+
+  <script>
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+
+      document.getElementById('status').innerText =
+        'Telegram OK ✅\\nUser: ' + (tg.initDataUnsafe?.user?.username || 'no username');
+    } else {
+      document.getElementById('status').innerText =
+        'Telegram SDK NOT FOUND ❌';
+    }
+  </script>
+
 </body>
 </html>
