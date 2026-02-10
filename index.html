@@ -3,25 +3,137 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telegram Test</title>
+  <title>🎲 Dice Mini App</title>
 
+  <!-- Telegram Mini App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head>
-<body style="background:#111;color:white;font-size:24px;padding:40px">
 
-  <div id="status">Loading...</div>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .card {
+      width: 320px;
+      padding: 28px 24px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: 26px;
+    }
+
+    .dice-container {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin: 22px 0;
+    }
+
+    .dice {
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      background: white;
+      color: #111;
+      font-size: 42px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .roll {
+      animation: shake 0.35s;
+    }
+
+    @keyframes shake {
+      0% { transform: rotate(0deg); }
+      25% { transform: rotate(10deg); }
+      50% { transform: rotate(-10deg); }
+      75% { transform: rotate(5deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #ffb347, #ffcc33);
+      color: #1a1a1a;
+    }
+
+    .sum {
+      margin-top: 14px;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>🎲 Бросок костей</h1>
+
+    <div class="dice-container">
+      <div id="d1" class="dice">?</div>
+      <div id="d2" class="dice">?</div>
+    </div>
+
+    <button onclick="roll()">Бросить</button>
+    <div id="sum" class="sum"></div>
+  </div>
 
   <script>
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
+    // Telegram Mini App init
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
 
-      document.getElementById('status').innerText =
-        'Telegram OK ✅\\nUser: ' + (tg.initDataUnsafe?.user?.username || 'no username');
-    } else {
-      document.getElementById('status').innerText =
-        'Telegram SDK NOT FOUND ❌';
+    function roll() {
+      const d1 = document.getElementById('d1');
+      const d2 = document.getElementById('d2');
+      const sum = document.getElementById('sum');
+
+      d1.classList.add('roll');
+      d2.classList.add('roll');
+
+      setTimeout(() => {
+        const v1 = Math.floor(Math.random() * 6) + 1;
+        const v2 = Math.floor(Math.random() * 6) + 1;
+
+        d1.textContent = v1;
+        d2.textContent = v2;
+        sum.textContent = `Сумма: ${v1 + v2}`;
+
+        d1.classList.remove('roll');
+        d2.classList.remove('roll');
+
+        if (tg.HapticFeedback) {
+          tg.HapticFeedback.impactOccurred('medium');
+        }
+      }, 300);
     }
   </script>
 
