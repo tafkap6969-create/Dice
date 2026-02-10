@@ -3,69 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎲 Craps Mini App</title>
-
+  <title>🎲 Craps Casino</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 
     body {
       margin: 0;
       height: 100vh;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
       display: flex;
       align-items: center;
       justify-content: center;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.06), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(0,0,0,0.3), transparent 40%),
+        #0b5d3b; /* casino felt */
       color: white;
     }
 
     .card {
-      width: 340px;
-      padding: 26px 22px;
+      width: 360px;
+      padding: 24px 22px;
       border-radius: 24px;
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(12px);
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
       text-align: center;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
     }
 
-    h1 {
-      margin: 0 0 10px;
-      font-size: 26px;
-    }
-
-    .status {
-      margin-top: 6px;
-      font-size: 16px;
-      opacity: 0.9;
-    }
-
-    .point {
-      margin-top: 10px;
-      font-size: 18px;
-      font-weight: bold;
-    }
+    h1 { margin: 0 0 8px; font-size: 26px; }
+    .status { font-size: 14px; opacity: .85; }
+    .point { margin-top: 6px; font-weight: bold; }
 
     .dice-container {
       display: flex;
       justify-content: center;
-      gap: 18px;
-      margin: 22px 0;
+      gap: 22px;
+      margin: 26px 0;
+      perspective: 800px;
     }
 
     .dice {
       width: 80px;
       height: 80px;
-      border-radius: 16px;
       background: white;
+      border-radius: 16px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
       padding: 10px;
+      transform-style: preserve-3d;
+      transition: transform .6s cubic-bezier(.2,.7,.2,1);
+    }
+
+    .dice.rolling {
+      transform: rotateX(360deg) rotateY(360deg);
     }
 
     .pip {
@@ -80,24 +73,10 @@
 
     .show { display: block; }
 
-    .show { opacity: 1; }
-
-    .roll {
-      animation: shake 0.35s;
-    }
-
-    @keyframes shake {
-      0% { transform: rotate(0deg); }
-      25% { transform: rotate(10deg); }
-      50% { transform: rotate(-10deg); }
-      75% { transform: rotate(5deg); }
-      100% { transform: rotate(0deg); }
-    }
-
     button {
       width: 100%;
-      margin-top: 12px;
       padding: 14px;
+      margin-top: 12px;
       border-radius: 14px;
       border: none;
       cursor: pointer;
@@ -107,14 +86,15 @@
       color: #1a1a1a;
     }
 
-    .result {
-      margin-top: 14px;
-      font-size: 18px;
-      font-weight: bold;
+    .result { margin-top: 14px; font-size: 18px; font-weight: bold; }
+
+    .win-glow {
+      box-shadow: 0 0 25px rgba(124,252,152,0.9), 0 0 60px rgba(124,252,152,0.6);
     }
 
-    .win { color: #7CFC98; }
-    .lose { color: #ff7a7a; }
+    .lose-glow {
+      box-shadow: 0 0 25px rgba(255,90,90,0.9), 0 0 60px rgba(255,90,90,0.6);
+    }
   </style>
 </head>
 <body>
@@ -138,8 +118,26 @@
     tg.ready();
     tg.expand();
 
-    let phase = 'comeout'; // comeout | point | end
+    let phase = 'comeout';
     let point = null;
+
+    const pipMap = {
+      1: [5],
+      2: [1, 9],
+      3: [1, 5, 9],
+      4: [1, 3, 7, 9],
+      5: [1, 3, 5, 7, 9],
+      6: [1, 3, 4, 6, 7, 9]
+    };
+
+    function renderDice(el, value) {
+      el.innerHTML = '';
+      for (let i = 1; i <= 9; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'pip' + (pipMap[value].includes(i) ? ' show' : '');
+        el.appendChild(pip);
+      }
+    }
 
     function roll() {
       if (phase === 'end') return;
@@ -150,71 +148,51 @@
       const phaseEl = document.getElementById('phase');
       const pointEl = document.getElementById('point');
 
-      d1.classList.add('roll');
-      d2.classList.add('roll');
+      d1.classList.add('rolling');
+      d2.classList.add('rolling');
+      d1.classList.remove('win-glow','lose-glow');
+      d2.classList.remove('win-glow','lose-glow');
 
       setTimeout(() => {
-        const v1 = Math.floor(Math.random() * 6) + 1;
-        const v2 = Math.floor(Math.random() * 6) + 1;
-        const sum = v1 + v2;
+        const v1 = Math.floor(Math.random()*6)+1;
+        const v2 = Math.floor(Math.random()*6)+1;
+        const sum = v1+v2;
 
         renderDice(d1, v1);
         renderDice(d2, v2);
 
-        d1.classList.remove('roll');
-        d2.classList.remove('roll');
+        d1.classList.remove('rolling');
+        d2.classList.remove('rolling');
 
         if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
         if (phase === 'comeout') {
-          if (sum === 7 || sum === 11) {
-            endGame('WIN 🎉', 'win');
-          } else if ([2, 3, 12].includes(sum)) {
-            endGame('LOSE 💀', 'lose');
-          } else {
-            point = sum;
-            phase = 'point';
-            phaseEl.textContent = 'POINT PHASE';
-            pointEl.textContent = 'POINT: ' + point;
-            resultEl.textContent = 'Бросай дальше';
-          }
+          if (sum === 7 || sum === 11) return end('WIN 🎉','win');
+          if ([2,3,12].includes(sum)) return end('LOSE 💀','lose');
+          point = sum;
+          phase = 'point';
+          phaseEl.textContent = 'POINT PHASE';
+          pointEl.textContent = 'POINT: ' + point;
+          resultEl.textContent = 'Бросай дальше';
         } else if (phase === 'point') {
-          if (sum === point) {
-            endGame('WIN 🎉', 'win');
-          } else if (sum === 7) {
-            endGame('LOSE 💀', 'lose');
-          } else {
-            resultEl.textContent = 'Ничего не произошло';
-          }
+          if (sum === point) return end('WIN 🎉','win');
+          if (sum === 7) return end('LOSE 💀','lose');
+          resultEl.textContent = 'Ничего не произошло';
         }
-      }, 300);
+      }, 600);
     }
 
-    function renderDice(el, value) {
-      el.innerHTML = '';
-      const map = {
-        1: [5],
-        2: [1, 9],
-        3: [1, 5, 9],
-        4: [1, 3, 7, 9],
-        5: [1, 3, 5, 7, 9],
-        6: [1, 3, 4, 6, 7, 9]
-      };
-      for (let i = 1; i <= 9; i++) {
-        const pip = document.createElement('div');
-        pip.className = 'pip' + (map[value].includes(i) ? ' show' : '');
-        el.appendChild(pip);
-      }
-    }
-    }
-
-    function endGame(text, cls) {
+    function end(text, type) {
       const resultEl = document.getElementById('result');
-      const rollBtn = document.getElementById('rollBtn');
+      const btn = document.getElementById('rollBtn');
+      const glow = type === 'win' ? 'win-glow' : 'lose-glow';
+
       resultEl.textContent = text;
-      resultEl.className = 'result ' + cls;
-      rollBtn.textContent = 'Новая игра';
-      rollBtn.onclick = reset;
+      document.getElementById('d1').classList.add(glow);
+      document.getElementById('d2').classList.add(glow);
+
+      btn.textContent = 'Новая игра';
+      btn.onclick = reset;
       phase = 'end';
     }
 
@@ -224,9 +202,8 @@
       document.getElementById('phase').textContent = 'COME OUT ROLL';
       document.getElementById('point').textContent = '';
       document.getElementById('result').textContent = '';
-      document.getElementById('result').className = 'result';
-      document.getElementById('d1').textContent = '?';
-      document.getElementById('d2').textContent = '?';
+      document.getElementById('d1').className = 'dice';
+      document.getElementById('d2').className = 'dice';
       const btn = document.getElementById('rollBtn');
       btn.textContent = 'Бросить';
       btn.onclick = roll;
