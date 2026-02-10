@@ -62,13 +62,23 @@
       height: 80px;
       border-radius: 16px;
       background: white;
-      color: #111;
-      font-size: 42px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 10px;
     }
+
+    .pip {
+      width: 12px;
+      height: 12px;
+      background: #111;
+      border-radius: 50%;
+      align-self: center;
+      justify-self: center;
+      opacity: 0;
+    }
+
+    .show { opacity: 1; }
 
     .roll {
       animation: shake 0.35s;
@@ -113,8 +123,8 @@
     <div id="point" class="point"></div>
 
     <div class="dice-container">
-      <div id="d1" class="dice">?</div>
-      <div id="d2" class="dice">?</div>
+      <div id="d1" class="dice"></div>
+      <div id="d2" class="dice"></div>
     </div>
 
     <button id="rollBtn" onclick="roll()">Бросить</button>
@@ -146,15 +156,13 @@
         const v2 = Math.floor(Math.random() * 6) + 1;
         const sum = v1 + v2;
 
-        d1.textContent = v1;
-        d2.textContent = v2;
+        renderDice(d1, v1);
+        renderDice(d2, v2);
 
         d1.classList.remove('roll');
         d2.classList.remove('roll');
 
-        if (tg.HapticFeedback) {
-          tg.HapticFeedback.impactOccurred('medium');
-        }
+        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
         if (phase === 'comeout') {
           if (sum === 7 || sum === 11) {
@@ -178,6 +186,24 @@
           }
         }
       }, 300);
+    }
+
+    function renderDice(el, value) {
+      el.innerHTML = '';
+      const map = {
+        1: [5],
+        2: [1, 9],
+        3: [1, 5, 9],
+        4: [1, 3, 7, 9],
+        5: [1, 3, 5, 7, 9],
+        6: [1, 3, 4, 6, 7, 9]
+      };
+      for (let i = 1; i <= 9; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'pip' + (map[value].includes(i) ? ' show' : '');
+        el.appendChild(pip);
+      }
+    }
     }
 
     function endGame(text, cls) {
